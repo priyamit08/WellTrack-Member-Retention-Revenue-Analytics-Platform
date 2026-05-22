@@ -1,1 +1,19 @@
-
+-- =============================================================================
+--  FITTRACK ANALYTICS — COMPLETE SQL PROJECT
+--  B2B2C Fitness Subscription Platform
+--  PostgreSQL 15  |  4,800+ member records  |  4 source tables
+-- =============================================================================
+--
+--  TABLE OF CONTENTS
+--  -----------------
+--  SECTION 1 : Schema Creation (DDL)
+--  SECTION 2 : Raw Dataset — Seed Data (representative 50-row samples per table)
+--  SECTION 3 : Query 1  — MRR Trend (12 rolling months)
+--  SECTION 4 : Query 2  — Churn Rate by Membership Tier
+--  SECTION 5 : Query 3  — 12-Month Cohort Retention Heatmap
+--  SECTION 6 : Query 4  — Engagement Scoring (CASE logic)
+--  SECTION 7 : Query 5  — Partner Facility Utilisation Analysis
+--  SECTION 8 : Query 6  — At-Risk Member Churn-Prevention Export
+--  SECTION 9 : Query Results (representative output, formatted as comments)
+--  SECTION 10: Data Dictionary View
+-- =============================================================================
