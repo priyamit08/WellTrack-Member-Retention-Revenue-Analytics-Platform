@@ -1,0 +1,47 @@
+
+-- =============================================================================
+--  SECTION 9: DATA DICTIONARY VIEW
+-- =============================================================================
+-- Creates a queryable reference view for all KPI definitions
+
+CREATE OR REPLACE VIEW fittrack_data_dictionary AS
+SELECT 'MRR'               AS metric,
+       'Monthly Recurring Revenue'  AS full_name,
+       'Total predictable subscription revenue billed in a calendar month from paid invoices' AS definition,
+       'SUM(amount) WHERE status=''paid'' GROUP BY billing_month' AS formula,
+       'invoices'          AS source_tables,
+       'Finance, C-Suite'  AS primary_consumers
+UNION ALL
+SELECT 'churn_rate',       'Monthly Churn Rate',
+       '% of active members at start of month who cancelled by end of month',
+       'churned / active_start_of_month * 100',
+       'members',          'Product, CX'
+UNION ALL
+SELECT 'arpu',             'Average Revenue Per User',
+       'MRR divided by count of active paying members',
+       'MRR / COUNT(active_member_id)',
+       'members, invoices', 'Finance, Growth'
+UNION ALL
+SELECT 'retention_rate',   'Cohort Retention Rate',
+       '% of a join cohort still active N months after their first subscription month',
+       'active_in_month_N / cohort_size * 100',
+       'members, invoices', 'Product, Analytics'
+UNION ALL
+SELECT 'engagement_tier',  'Engagement Scoring Tier',
+       'High/Medium/Low/Inactive classification based on days since last facility check-in',
+       'CASE WHEN days_inactive<=7 THEN High WHEN <=14 THEN Medium WHEN <=60 THEN Low ELSE Inactive END',
+       'members, facility_checkins', 'CX, Retention'
+UNION ALL
+SELECT 'partner_util_rate','Partner Utilisation Rate',
+       '% of active members who used at least one partner facility in the last 90 days',
+       'COUNT(DISTINCT partner_users) / active_members * 100',
+       'members, partner_usage', 'Operations, Partnerships'
+UNION ALL
+SELECT 'at_risk_flag',     'At-Risk Member Flag',
+       'Binary: 1 = active member with >14 days inactivity (churn prevention target)',
+       'CASE WHEN status=''active'' AND days_inactive>14 THEN 1 ELSE 0 END',
+       'members, facility_checkins', 'CX, CRM';
+
+-- Query the dictionary
+SELECT * FROM fittrack_data_dictionary ORDER BY metric;
+
