@@ -1,1 +1,75 @@
 
+-- =============================================================================
+--  SECTION 1: SCHEMA CREATION (DDL)
+-- =============================================================================
+
+-- Drop tables if re-running (safe order respects FK constraints)
+DROP TABLE IF EXISTS partner_usage      CASCADE;
+DROP TABLE IF EXISTS facility_checkins  CASCADE;
+DROP TABLE IF EXISTS invoices           CASCADE;
+DROP TABLE IF EXISTS members            CASCADE;
+
+-- ── members ──────────────────────────────────────────────────────────────────
+CREATE TABLE members (
+    member_id           SERIAL          PRIMARY KEY,
+    full_name           VARCHAR(100)    NOT NULL,
+    email               VARCHAR(150)    NOT NULL UNIQUE,
+    membership_tier     VARCHAR(20)     NOT NULL CHECK (membership_tier IN ('Basic','Standard','Premium')),
+    join_date           DATE            NOT NULL,
+    status              VARCHAR(20)     NOT NULL CHECK (status IN ('active','churned','paused')),
+    corporate_client_id INTEGER,                          -- NULL = direct consumer
+    last_checkin_date   DATE,
+    monthly_fee         NUMERIC(8,2)    NOT NULL
+);
+
+CREATE INDEX idx_members_status        ON members(status);
+CREATE INDEX idx_members_tier          ON members(membership_tier);
+CREATE INDEX idx_members_corporate     ON members(corporate_client_id);
+CREATE INDEX idx_members_last_checkin  ON members(last_checkin_date);
+
+-- ── invoices ─────────────────────────────────────────────────────────────────
+CREATE TABLE invoices (
+    invoice_id      SERIAL          PRIMARY KEY,
+    member_id       INTEGER         NOT NULL REFERENCES members(member_id) ON DELETE CASCADE,
+    invoice_date    DATE            NOT NULL,
+    amount          NUMERIC(8,2)    NOT NULL,
+    status          VARCHAR(20)     NOT NULL CHECK (status IN ('paid','unpaid','overdue','refunded')),
+    payment_method  VARCHAR(50),
+    billing_period  VARCHAR(20),
+    due_date        DATE
+);
+
+CREATE INDEX idx_invoices_member      ON invoices(member_id);
+CREATE INDEX idx_invoices_date        ON invoices(invoice_date);
+CREATE INDEX idx_invoices_status      ON invoices(status);
+
+-- ── facility_checkins ────────────────────────────────────────────────────────
+CREATE TABLE facility_checkins (
+    checkin_id      SERIAL          PRIMARY KEY,
+    member_id       INTEGER         NOT NULL REFERENCES members(member_id) ON DELETE CASCADE,
+    facility_id     INTEGER         NOT NULL,
+    checkin_date    DATE            NOT NULL,
+    checkin_time    TIME,
+    facility_type   VARCHAR(50),
+    duration_mins   INTEGER
+);
+
+CREATE INDEX idx_checkins_member  ON facility_checkins(member_id);
+CREATE INDEX idx_checkins_date    ON facility_checkins(checkin_date);
+CREATE INDEX idx_checkins_facility ON facility_checkins(facility_id);
+
+-- ── partner_usage ────────────────────────────────────────────────────────────
+CREATE TABLE partner_usage (
+    usage_id            SERIAL          PRIMARY KEY,
+    member_id           INTEGER         NOT NULL REFERENCES members(member_id) ON DELETE CASCADE,
+    partner_id          INTEGER         NOT NULL,
+    partner_name        VARCHAR(100),
+    usage_date          DATE            NOT NULL,
+    visit_count         INTEGER         DEFAULT 1,
+    activity_type       VARCHAR(50),
+    cost_to_platform    NUMERIC(6,2)
+);
+
+CREATE INDEX idx_partner_member ON partner_usage(member_id);
+CREATE INDEX idx_partner_date   ON partner_usage(usage_date);
+CREATE INDEX idx_partner_id     ON partner_usage(partner_id);
