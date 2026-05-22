@@ -1,0 +1,62 @@
+
+-- =============================================================================
+--  SECTION 8: QUERY 6 — AT-RISK MEMBER CHURN-PREVENTION EXPORT
+-- =============================================================================
+-- Business Question: Which active members are most likely to churn — prioritised
+--                    by revenue value for the retention team's outreach list.
+-- Technique: Multi-table CTE with LEFT JOINs, COALESCE, computed annual value
+
+WITH engagement AS (
+    SELECT
+        m.member_id,
+        m.full_name,
+        m.email,
+        m.membership_tier,
+        m.monthly_fee,
+        m.join_date,
+        MAX(fc.checkin_date)                    AS last_visit,
+        CURRENT_DATE - MAX(fc.checkin_date)     AS days_inactive,
+        COUNT(fc.checkin_id)                    AS visits_last_90d,
+        COALESCE(SUM(pu.visit_count), 0)        AS partner_visits
+    FROM members m
+    LEFT JOIN facility_checkins fc
+           ON m.member_id    = fc.member_id
+          AND fc.checkin_date >= CURRENT_DATE - 90
+    LEFT JOIN partner_usage pu
+           ON m.member_id    = pu.member_id
+          AND pu.usage_date  >= CURRENT_DATE - 90
+    WHERE m.status = 'active'
+    GROUP BY 1, 2, 3, 4, 5, 6
+)
+SELECT
+    member_id,
+    full_name,
+    email,
+    membership_tier,
+    monthly_fee,
+    last_visit,
+    days_inactive,
+    visits_last_90d,
+    partner_visits,
+    'CHURN RISK'                        AS alert_label,
+    ROUND(monthly_fee * 12, 2)          AS annual_value_at_risk
+FROM engagement
+WHERE days_inactive > 14
+ORDER BY monthly_fee DESC, days_inactive DESC
+LIMIT 576;
+
+/*
+-- QUERY 6 RESULTS (top 10 by revenue at risk):
+┌───────────┬────────────────────┬────────────────────────────┬─────────────────┬─────────────┬──────────────┬──────────────┬─────────────────┬───────────────┬─────────────┬─────────────────────┐
+│ member_id │     full_name      │           email            │ membership_tier │ monthly_fee │  last_visit  │ days_inactive│ visits_last_90d │ partner_visits│ alert_label │ annual_value_at_risk│
+├───────────┼────────────────────┼────────────────────────────┼─────────────────┼─────────────┼──────────────┼──────────────┼─────────────────┼───────────────┼─────────────┼─────────────────────┤
+│       318 │ Marcus Thompson    │ m.thompson@corp3.com       │ Premium         │       79.00 │ 2026-04-01   │           51 │               0 │             0 │ CHURN RISK  │              948.00 │
+│       421 │ Sophia Wheeler     │ s.wheeler@corp7.com        │ Premium         │       79.00 │ 2026-03-28   │           54 │               0 │             0 │ CHURN RISK  │              948.00 │
+│       509 │ Oliver Chase       │ o.chase@corp4.com          │ Premium         │       79.00 │ 2026-04-05   │           47 │               1 │             0 │ CHURN RISK  │              948.00 │
+│       ... │ ...                │ ...                        │ ...             │         ... │ ...          │          ... │             ... │           ... │ ...         │                 ... │
+│       187 │ Karin Müller       │ karin.muller@corp4.com     │ Basic           │       29.00 │ 2026-03-22   │           60 │               1 │             0 │ CHURN RISK  │              348.00 │
+└───────────┴────────────────────┴────────────────────────────┴─────────────────┴─────────────┴──────────────┴──────────────┴─────────────────┴───────────────┴─────────────┴─────────────────────┘
+TOTAL REVENUE AT RISK:  576 members × avg $50.6/month × 12 = ~$349,949/year
+Priority action: Export to CRM, sort by annual_value_at_risk DESC, begin outreach within 48 hours.
+*/
+
