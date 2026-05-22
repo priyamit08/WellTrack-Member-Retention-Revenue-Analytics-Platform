@@ -3,7 +3,7 @@
 
 ## 🎯 Project Overview
 
-FitTrack operates a **B2B2C fitness subscription platform** — selling memberships to corporate clients whose employees access partner gym networks. This project builds the full analytics layer from scratch:
+WellTrack operates a **B2B2C fitness subscription platform** — selling memberships to corporate clients whose employees access partner gym networks. This project builds the full analytics layer from scratch:
 
 | Deliverable | Description |
 |---|---|
@@ -168,39 +168,6 @@ COHORT RETENTION AT MONTH 6
   Gap           : 18 percentage points
 ```
 
----
-
-## 📁 Project Structure
-
-```
-fittrack-analytics/
-│
-├── README.md                          ← You are here
-│
-├── sql/
-│   ├── 00_schema.sql                  ← DDL: table definitions + indexes
-│   ├── 01_seed_data.sql               ← Raw dataset (representative sample)
-│   ├── 02_query_mrr_trend.sql         ← Query 1: MRR by tier, 12 months
-│   ├── 03_query_churn_by_tier.sql     ← Query 2: Churn rate + 3M rolling avg
-│   ├── 04_query_cohort_retention.sql  ← Query 3: 12-month cohort heatmap
-│   ├── 05_query_engagement_score.sql  ← Query 4: Engagement CASE scoring
-│   ├── 06_query_partner_util.sql      ← Query 5: Partner utilisation + RANK()
-│   ├── 07_query_at_risk_export.sql    ← Query 6: Churn-prevention CRM list
-│   └── 08_data_dictionary_view.sql    ← Queryable KPI documentation view
-│
-├── fittrack_analytics_complete.sql    ← All of the above in one file
-│
-├── docs/
-│   ├── FitTrack_Stakeholder_Report.pptx   ← Executive presentation
-│   ├── data_dictionary.md                 ← KPI definitions reference
-│   └── erd_diagram.png                    ← Entity relationship diagram
-│
-└── tableau/
-    └── fittrack_dashboard.twbx            ← Tableau workbook (connect to PG)
-```
-
-
-- PostgreSQL 15+
 
 
 ## 🛠️ Tech Stack
